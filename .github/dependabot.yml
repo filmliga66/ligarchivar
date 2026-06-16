@@ -4,18 +4,98 @@ updates:
     directory: "/src/frontend"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "frontend"
+    commit-message:
+      prefix: "deps(frontend)"
+    groups:
+      frontend-runtime:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+      frontend-build-tooling:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "nuget"
     directory: "/src/backend"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "06:15"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "backend"
+    commit-message:
+      prefix: "deps(backend)"
+    groups:
+      dotnet-runtime:
+        patterns:
+          - "Microsoft.Extensions.*"
+          - "System.IO.Abstractions"
+        update-types:
+          - "minor"
+          - "patch"
+      dotnet-tests:
+        patterns:
+          - "*.Testing"
+          - "*.TestingHelpers"
+          - "*Test*"
+          - "FluentAssertions"
+          - "Microsoft.NET.Test.Sdk"
+          - "xunit*"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "06:30"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "deps(actions)"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "06:45"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "deps(docker)"
+    groups:
+      docker-base-images:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
