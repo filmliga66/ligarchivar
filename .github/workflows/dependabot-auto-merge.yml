@@ -28,7 +28,7 @@ jobs:
       - name: Check update safety
         id: safety
         run: |
-          if jq -e 'all(.[]; .["update-type"] == "version-update:semver-minor" or .["update-type"] == "version-update:semver-patch")' <<< "$UPDATED_DEPENDENCIES"; then
+          if jq -e 'all(.[]; .updateType == "version-update:semver-minor" or .updateType == "version-update:semver-patch")' <<< "$UPDATED_DEPENDENCIES"; then
             echo "safe=true" >> "$GITHUB_OUTPUT"
           else
             echo "safe=false" >> "$GITHUB_OUTPUT"
