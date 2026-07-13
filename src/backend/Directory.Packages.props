@@ -4,7 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- Core -->
-    <PackageVersion Include="System.IO.Abstractions" Version="22.1.1" />
+    <PackageVersion Include="System.IO.Abstractions" Version="22.2.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.9" />
     <!-- Tests -->
     <PackageVersion Include="FluentAssertions" Version="8.10.0" />
