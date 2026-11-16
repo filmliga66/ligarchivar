@@ -7,7 +7,7 @@ COPY src/frontend/ ./
 RUN npm run build
 
 # ── Stage 2: Build backend ────────────────────────────────────────────────────
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS backend-build
+FROM mcr.microsoft.com/dotnet/sdk:11.0 AS backend-build
 WORKDIR /app
 COPY src/backend/ ./
 RUN dotnet publish FL.LigArchivar.Api/FL.LigArchivar.Api.csproj \
