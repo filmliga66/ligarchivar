@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using FL.LigArchivar.Api.Models;
 using FL.LigArchivar.Api.Services;
 
@@ -39,42 +40,23 @@ public class EventsController : ControllerBase
     /// POST /api/events/rename?path=Digitalfoto/2018/A-Albverein/A_2018-05-01_Maiwanderung
     /// </summary>
     [HttpPost("rename")]
-    public ActionResult<EventDetailDto> Rename([FromQuery] string path, [FromBody] RenameRequestDto request)
-    {
-        if (!ArchiveService.ValidatePath(path))
-            return BadRequest("Invalid path.");
-
-        var (result, error) = _archiveService.Rename(path, request);
-
-        return error switch
-        {
-            null => Ok(result),
-            "locked" => Conflict(new { message = "A rename operation is already in progress." }),
-            "not-found" => NotFound(),
-            "invalid-path" => BadRequest("Invalid path."),
-            _ => UnprocessableEntity(new { message = error })
-        };
-    }
+    public IActionResult Rename([FromQuery] string path, [FromBody] RenameRequestDto request) =>
+        ToActionResult(_archiveService.Rename(path, request));
 
     /// <summary>
     /// DateTime-based rename. Acquires write lock; returns 409 if locked.
     /// POST /api/events/rename-by-datetime?path=Digitalfoto/2018/A-Albverein/A_2018-05-01_Maiwanderung
     /// </summary>
     [HttpPost("rename-by-datetime")]
-    public ActionResult<EventDetailDto> RenameByDateTime([FromQuery] string path)
+    public IActionResult RenameByDateTime([FromQuery] string path,
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] RenameByDateTimeRequestDto? request) =>
+        ToActionResult(_archiveService.RenameByDateTime(path, request?.ConfirmationToken));
+
+    private IActionResult ToActionResult(RenameOutcome outcome) => outcome switch
     {
-        if (!ArchiveService.ValidatePath(path))
-            return BadRequest("Invalid path.");
-
-        var (result, error) = _archiveService.RenameByDateTime(path);
-
-        return error switch
-        {
-            null => Ok(result),
-            "locked" => Conflict(new { message = "A rename operation is already in progress." }),
-            "not-found" => NotFound(),
-            "invalid-path" => BadRequest("Invalid path."),
-            _ => UnprocessableEntity(new { message = error })
-        };
-    }
+        RenameCompleted completed => Ok(completed.Event),
+        RenameNeedsConfirmation confirmation => Accepted(confirmation.Preview),
+        RenameFailure failure => StatusCode(failure.StatusCode, new { message = failure.Message }),
+        _ => throw new ArgumentOutOfRangeException(nameof(outcome)),
+    };
 }

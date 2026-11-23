@@ -9,6 +9,7 @@ Runs as a single Docker container; the archive directory is mounted as a volume.
 - Validity color-coding — invalid paths are highlighted in red
 - Sequential rename: renumber files starting from a given number
 - Date-time rename: rename files using their `LastWriteTimeUtc`
+- Both rename modes check all targets before writing and ask for confirmation before permanently deleting DNG-only groups
 - Sort files by name or by date before renaming
 - Cookie-based authentication (single user, credentials via environment variables)
 - Write operations are serialized — concurrent rename attempts return `409 Conflict`
@@ -188,3 +189,18 @@ FL.LigArchivar/
 | POST   | `/api/events/rename?path=...`             | Sequential rename                |
 | POST   | `/api/events/rename-by-datetime?path=...` | Date-time rename                 |
 | GET    | `/health`                                 | Health check (for Docker/probes) |
+
+Both rename endpoints return `200 OK` with updated event details when the
+operation completes. If a checked plan includes permanent deletions, they
+instead return `202 Accepted` with `filesToDelete` (exact filenames) and an
+opaque `confirmationToken`, without changing files. To proceed, repeat the
+same request after the user confirms and include `confirmationToken` in the
+JSON body. Sequential rename also requires the original `startNumber` and
+`fileOrder` (if provided); date-time rename needs only the token. A changed plan
+is not executed with an old token: review any newly returned `202` preview before
+retrying. Tokens are invalidated by a server restart.
+
+Preflight conflicts return `422`. An I/O failure during execution returns `500`;
+earlier operations may already have changed files, so reload the event before
+retrying. Preflight is not a filesystem transaction or a lock against external
+archive writers.

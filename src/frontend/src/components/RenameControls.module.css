@@ -79,6 +79,45 @@
   background: var(--color-hover);
 }
 
+.dialog {
+  margin: auto;
+  max-width: min(34rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  padding: 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.dialog::backdrop {
+  background: rgb(0 0 0 / 55%);
+}
+
+.dialog h2 {
+  margin-bottom: 0.5rem;
+  font-size: 1.125rem;
+}
+
+.dialog ul {
+  max-height: 40vh;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  margin: 0.75rem 0;
+  padding-inline-start: 1.5rem;
+}
+
+.btnDanger {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  border-color: var(--color-error-border);
+  white-space: normal;
+}
+
+.btnDanger:hover:not(:disabled) {
+  border-color: var(--color-error);
+}
+
 .errorBanner {
   display: flex;
   align-items: center;
