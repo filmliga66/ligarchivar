@@ -53,11 +53,14 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Type-check
-        run: npx tsc --noEmit
-
-      - name: Build
+      - name: Type-check and build
         run: npm run build
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Test browser behavior
+        run: npm run test:browser
 
   docker-smoke:
     name: Docker (build + smoke test)

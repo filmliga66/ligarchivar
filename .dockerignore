@@ -20,6 +20,8 @@ src/frontend/dist/
 
 # Test results
 **/TestResults/
+src/frontend/test-results/
+src/frontend/playwright-report/
 
 # Local environment overrides
 *.env
