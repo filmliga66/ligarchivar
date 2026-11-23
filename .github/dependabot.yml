@@ -35,14 +35,17 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
-      - "backend"
+      - ".NET"
     commit-message:
       prefix: "deps(backend)"
     groups:
+      filesystem-abstractions:
+        patterns:
+          - "System.IO.Abstractions"
+          - "System.IO.Abstractions.TestingHelpers"
       dotnet-runtime:
         patterns:
           - "Microsoft.Extensions.*"
-          - "System.IO.Abstractions"
         update-types:
           - "minor"
           - "patch"
@@ -93,6 +96,10 @@ updates:
     commit-message:
       prefix: "deps(docker)"
     groups:
+      dotnet-images:
+        patterns:
+          - "dotnet/sdk"
+          - "dotnet/aspnet"
       docker-base-images:
         patterns:
           - "*"
