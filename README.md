@@ -73,7 +73,7 @@ Setting `PUID`/`PGID` causes the container process to run as that user via
 
 ### Prerequisites
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- [.NET 11 SDK](https://dotnet.microsoft.com/download)
 - [Node.js 24](https://nodejs.org/) + npm
 
 ### Backend
@@ -109,7 +109,7 @@ docker build -t ligarchivar .
 FL.LigArchivar/
 ├── src/
 │   ├── backend/
-│   │   ├── FL.LigArchivar.Core/        # Domain logic (.NET 10)
+│   │   ├── FL.LigArchivar.Core/        # Domain logic (.NET 11)
 │   │   ├── FL.LigArchivar.Core.Tests/  # xUnit tests
 │   │   ├── FL.LigArchivar.Api/         # ASP.NET Core Web API
 │   │   └── FL.LigArchivar.Api.Tests/   # Integration tests
@@ -126,13 +126,13 @@ FL.LigArchivar/
 | Layer                       | Technology                       | Version       |
 | --------------------------- | -------------------------------- | ------------- |
 | **Backend language**        | C#                               | 13            |
-| **Backend framework**       | ASP.NET Core Web API             | .NET 10       |
+| **Backend framework**       | ASP.NET Core Web API             | .NET 11       |
 | **Frontend library**        | React                            | 19            |
 | **Frontend language**       | TypeScript                       | 6             |
 | **Frontend build tool**     | Vite                             | 8             |
 | **Server state / caching**  | TanStack Query (React Query)     | 5             |
 | **Backend testing**         | xUnit + FluentAssertions         | xUnit 2, FA 8 |
-| **Integration testing**     | Microsoft.AspNetCore.Mvc.Testing | .NET 10       |
+| **Integration testing**     | Microsoft.AspNetCore.Mvc.Testing | .NET 11       |
 | **File-system abstraction** | System.IO.Abstractions           | 21            |
 | **Containerization**        | Docker (multi-stage build)       | —             |
 | **CI/CD**                   | GitHub Actions                   | —             |

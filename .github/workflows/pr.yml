@@ -58,3 +58,29 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  docker-smoke:
+    name: Docker (build + smoke test)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build image
+        run: docker build --tag ligarchivar:pr .
+
+      - name: Check container startup
+        run: |
+          container=$(docker run --detach -e AUTH_USERNAME=smoke -e AUTH_PASSWORD=smoke ligarchivar:pr)
+          trap 'docker rm -f "$container" >/dev/null' EXIT
+          for attempt in {1..30}; do
+            if docker exec "$container" curl --max-time 2 -fsS http://localhost:8080/health; then
+              exit 0
+            fi
+            if [ "$(docker inspect -f '{{.State.Running}}' "$container")" != true ]; then
+              break
+            fi
+            sleep 1
+          done
+          docker logs "$container"
+          exit 1
