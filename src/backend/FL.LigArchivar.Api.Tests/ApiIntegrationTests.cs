@@ -39,7 +39,7 @@ public class AuthControllerTests : IAsyncLifetime
     public async Task Login_WithValidCredentials_Returns200AndSetsCookie()
     {
         var response = await _client.PostAsJsonAsync("/api/auth/login",
-            new { username = "admin", password = "changeme" });
+            new { username = "test-user", password = "test-password" });
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
@@ -55,7 +55,7 @@ public class AuthControllerTests : IAsyncLifetime
     public async Task Status_AfterLogin_ReturnsAuthenticatedTrue()
     {
         await _client.PostAsJsonAsync("/api/auth/login",
-            new { username = "admin", password = "changeme" });
+            new { username = "test-user", password = "test-password" });
 
         var response = await _client.GetAsync("/api/auth/status");
         var dto = await response.Content.ReadFromJsonAsync<AuthStatusDto>();
@@ -68,7 +68,7 @@ public class AuthControllerTests : IAsyncLifetime
     {
         // Login first
         await _client.PostAsJsonAsync("/api/auth/login",
-            new { username = "admin", password = "changeme" });
+            new { username = "test-user", password = "test-password" });
 
         // Verify authenticated
         var statusBefore = await _client.GetFromJsonAsync<AuthStatusDto>("/api/auth/status");

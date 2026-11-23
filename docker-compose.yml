@@ -6,8 +6,8 @@ services:
     volumes:
       - /path/to/archive:/archive:rw
     environment:
-      - AUTH_USERNAME=admin
-      - AUTH_PASSWORD=changeme
+      - AUTH_USERNAME=${AUTH_USERNAME:-fl-admin}
+      - AUTH_PASSWORD=${AUTH_PASSWORD:?Set AUTH_PASSWORD to a non-empty password}
       - ARCHIVE_ROOT=/archive
       # Set these to the UID/GID of the user that owns the archive files
       # on the host so the container process can read and rename them.
