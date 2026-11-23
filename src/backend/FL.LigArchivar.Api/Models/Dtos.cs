@@ -26,7 +26,11 @@ public record FileGroupDto(
     DateTime LastWriteTimeUtc
 );
 
-public record RenameRequestDto(int StartNumber, string[]? FileOrder = null);
+public record RenameRequestDto(int StartNumber, string[]? FileOrder = null, string? ConfirmationToken = null);
+
+public record RenameByDateTimeRequestDto(string? ConfirmationToken = null);
+
+public record RenamePreviewDto(string[] FilesToDelete, string ConfirmationToken);
 
 public record LoginRequestDto(string Username, string Password);
 

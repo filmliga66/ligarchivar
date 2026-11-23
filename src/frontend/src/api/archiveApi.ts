@@ -3,6 +3,7 @@ import type {
   EventDetailDto,
   LoginRequestDto,
   RenameRequestDto,
+  RenameResult,
   TreeNodeDto,
 } from '../types/archive';
 
@@ -131,8 +132,8 @@ export async function getEvent(path: string): Promise<EventDetailDto> {
 export async function renameEvent(
   path: string,
   request: RenameRequestDto,
-): Promise<EventDetailDto> {
-  return apiFetch<EventDetailDto>(
+): Promise<RenameResult> {
+  return apiFetch<RenameResult>(
     `/api/events/rename?path=${encodeURIComponent(path)}`,
     {
       method: 'POST',
@@ -141,9 +142,9 @@ export async function renameEvent(
   );
 }
 
-export async function renameEventByDateTime(path: string): Promise<EventDetailDto> {
-  return apiFetch<EventDetailDto>(
+export async function renameEventByDateTime(path: string, confirmationToken?: string): Promise<RenameResult> {
+  return apiFetch<RenameResult>(
     `/api/events/rename-by-datetime?path=${encodeURIComponent(path)}`,
-    { method: 'POST' },
+    { method: 'POST', body: JSON.stringify({ confirmationToken }) },
   );
 }

@@ -43,9 +43,4 @@ public class DataFile
     public string FullName => _inner.FullName;
     public IDirectoryInfo Directory => _inner.Directory!;
     public DateTime LastWriteTimeUtc => _inner.LastWriteTimeUtc;
-
-    public void MoveTo(string destFileName)
-    {
-        _inner.MoveTo(destFileName);
-    }
 }

@@ -138,6 +138,7 @@ export function MainView({ onLoggedOut }: MainViewProps) {
             <div className={styles.eventPanel}>
               <div className={styles.renameSection}>
                 <RenameControls
+                  key={eventDetail.path}
                   eventPath={eventDetail.path}
                   fileOrder={fileOrder}
                   onRenamed={handleRenamed}

@@ -1,4 +1,7 @@
+using System.Buffers;
 using System.IO.Abstractions;
+using System.Security.Cryptography;
+using System.Text.Json;
 using FL.LigArchivar.Api.Models;
 using FL.LigArchivar.Core;
 using FL.LigArchivar.Core.Data;
@@ -18,6 +21,7 @@ public sealed class ArchiveService : IDisposable
 
     // Write operations are serialized; if already locked, 409 is returned.
     private readonly SemaphoreSlim _writeLock = new(1, 1);
+    private readonly byte[] _confirmationKey = RandomNumberGenerator.GetBytes(32);
 
     // Simple in-memory cache: reload tree on every read request (archive is local I/O).
     // For large archives, consider caching with a stale-on-write invalidation strategy.
@@ -72,38 +76,80 @@ public sealed class ArchiveService : IDisposable
 
     // ── Rename ────────────────────────────────────────────────────────────────
 
-    /// <returns>
-    ///   (dto, null) on success,
-    ///   (null, "locked") if a rename is already in progress,
-    ///   (null, message) on RenameException.
-    /// </returns>
-    public (EventDetailDto? Result, string? Error) Rename(string path, RenameRequestDto request)
+    public RenameOutcome Rename(string path, RenameRequestDto request) =>
+        Rename(path, request.StartNumber, request.FileOrder, request.ConfirmationToken);
+
+    public RenameOutcome RenameByDateTime(string path, string? confirmationToken) =>
+        Rename(path, null, null, confirmationToken);
+
+    private RenameOutcome Rename(string path, int? startNumber, string[]? fileOrder, string? confirmationToken)
     {
-        if (!ValidatePath(path)) return (null, "invalid-path");
+        if (!ValidatePath(path))
+            return new RenameFailure(StatusCodes.Status400BadRequest, "Invalid path.");
 
         if (!_writeLock.Wait(0))
-            return (null, "locked");
+            return new RenameFailure(StatusCodes.Status409Conflict, "A rename operation is already in progress.");
 
         try
         {
             if (!Core.ArchiveRoot.TryCreate(_archiveRoot, _fileSystem, out var root) || root == null)
-                return (null, "archive-not-found");
+                return new RenameFailure(StatusCodes.Status422UnprocessableEntity, "Das Archiv wurde nicht gefunden.");
 
             var node = root.GetChild(path);
             if (node is not EventDirectory eventDir)
-                return (null, "not-found");
+                return new RenameFailure(StatusCodes.Status404NotFound, "Die Veranstaltung wurde nicht gefunden.");
 
             eventDir.LoadChildren();
-            eventDir.Rename(request.StartNumber, request.FileOrder);
-            _logger.LogInformation("Renamed {Count} files in '{Path}' starting at {StartNumber}.",
-                eventDir.Children.Count, path, request.StartNumber);
+            var plan = startNumber is int number
+                ? eventDir.PlanRename(number, fileOrder)
+                : eventDir.PlanRenameByDateTime();
+            var confirmed = false;
+            if (plan.HasDeletions)
+            {
+                var expected = CreateConfirmationProof(eventDir.Directory.FullName, startNumber, fileOrder, plan);
+                Span<byte> supplied = stackalloc byte[32];
+                confirmed = confirmationToken?.Length == expected.Length * 2
+                    && Convert.FromHexString(confirmationToken.AsSpan(), supplied, out _, out var written) == OperationStatus.Done
+                    && written == expected.Length
+                    && CryptographicOperations.FixedTimeEquals(expected, supplied);
+                if (!confirmed)
+                {
+                    var names = plan.Entries.Where(entry => entry.DestinationPath is null)
+                        .Select(entry => _fileSystem.Path.GetFileName(entry.SourcePath)).ToArray();
+                    return new RenameNeedsConfirmation(new RenamePreviewDto(names, Convert.ToHexString(expected)));
+                }
+            }
+            else if (confirmationToken is not null)
+            {
+                return new RenameFailure(StatusCodes.Status422UnprocessableEntity,
+                    "Der Umbenennungsplan hat sich geändert. Bitte die Aktion neu starten.");
+            }
 
-            return (MapToEventDetail(eventDir, path), null);
+            eventDir.ExecuteRename(plan, allowDngDeletion: confirmed, logger: _logger);
+            try
+            {
+                return new RenameCompleted(MapToEventDetail(eventDir, path));
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                throw new RenameExecutionException(path, ex);
+            }
         }
         catch (RenameException ex)
         {
-            _logger.LogWarning("Rename failed for '{Path}': {Message}", path, ex.Message);
-            return (null, ex.Message);
+            _logger.LogWarning("Rename preflight failed for '{Path}': {Message}", path, ex.Message);
+            return new RenameFailure(StatusCodes.Status422UnprocessableEntity, ex.Message);
+        }
+        catch (RenameExecutionException ex)
+        {
+            _logger.LogError(ex, "Rename execution failed for '{Path}'.", path);
+            return new RenameFailure(StatusCodes.Status500InternalServerError, ex.Message);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogError(ex, "Could not prepare rename for '{Path}'.", path);
+            return new RenameFailure(StatusCodes.Status500InternalServerError,
+                $"Die Dateien für '{path}' konnten nicht geprüft werden. Es wurde nichts geändert.");
         }
         finally
         {
@@ -111,38 +157,17 @@ public sealed class ArchiveService : IDisposable
         }
     }
 
-    public (EventDetailDto? Result, string? Error) RenameByDateTime(string path)
+    private byte[] CreateConfirmationProof(string eventDirectory, int? startNumber, string[]? fileOrder, RenamePlan plan)
     {
-        if (!ValidatePath(path)) return (null, "invalid-path");
-
-        if (!_writeLock.Wait(0))
-            return (null, "locked");
-
-        try
+        // The numbered variant has a start number; the date variant does not.
+        // Recompute the proof under the write lock from the paths and current file metadata.
+        var entries = plan.Entries.Select(entry =>
         {
-            if (!Core.ArchiveRoot.TryCreate(_archiveRoot, _fileSystem, out var root) || root == null)
-                return (null, "archive-not-found");
-
-            var node = root.GetChild(path);
-            if (node is not EventDirectory eventDir)
-                return (null, "not-found");
-
-            eventDir.LoadChildren();
-            eventDir.RenameToFileDateTime();
-            _logger.LogInformation("Renamed {Count} files in '{Path}' by file date-time.",
-                eventDir.Children.Count, path);
-
-            return (MapToEventDetail(eventDir, path), null);
-        }
-        catch (RenameException ex)
-        {
-            _logger.LogWarning("RenameByDateTime failed for '{Path}': {Message}", path, ex.Message);
-            return (null, ex.Message);
-        }
-        finally
-        {
-            _writeLock.Release();
-        }
+            var file = _fileSystem.FileInfo.New(entry.SourcePath);
+            return new { entry.SourcePath, entry.DestinationPath, file.Length, file.LastWriteTimeUtc, file.CreationTimeUtc };
+        }).ToArray();
+        var payload = JsonSerializer.SerializeToUtf8Bytes(new { eventDirectory, startNumber, fileOrder, entries });
+        return HMACSHA256.HashData(_confirmationKey, payload);
     }
 
     // ── Mapping ───────────────────────────────────────────────────────────────
@@ -180,7 +205,7 @@ public sealed class ArchiveService : IDisposable
                 f.Files.Select(fi => fi.Extension).ToArray(),
                 f.Files.Select(fi => fi.Property).Where(p => !string.IsNullOrEmpty(p)).ToArray(),
                 f.IsValid,
-                f.IsLonely,
+                f.IsDngOnly,
                 f.Files.Count > 0 ? f.Files[0].LastWriteTimeUtc : DateTime.MinValue
             ))
             .ToArray();
@@ -215,3 +240,8 @@ public sealed class ArchiveService : IDisposable
         _writeLock.Dispose();
     }
 }
+
+public abstract record RenameOutcome;
+public sealed record RenameCompleted(EventDetailDto Event) : RenameOutcome;
+public sealed record RenameNeedsConfirmation(RenamePreviewDto Preview) : RenameOutcome;
+public sealed record RenameFailure(int StatusCode, string Message) : RenameOutcome;

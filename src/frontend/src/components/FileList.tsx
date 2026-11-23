@@ -106,14 +106,14 @@ function FileRow({ file, formatDate }: FileRowProps) {
     <tr className={rowClass}>
       <td className={styles.td}>{file.name}</td>
       <td className={styles.td}>
-        {file.extensions.map((ext) => (
+        {[...new Set(file.extensions)].map((ext) => (
           <span key={ext} className={styles.tag}>
             {ext}
           </span>
         ))}
       </td>
       <td className={styles.td}>
-        {file.properties.map((prop) => (
+        {[...new Set(file.properties)].map((prop) => (
           <span key={prop} className={styles.tag}>
             {prop}
           </span>
@@ -122,8 +122,8 @@ function FileRow({ file, formatDate }: FileRowProps) {
       <td className={styles.td}>{formatDate(file.lastWriteTimeUtc)}</td>
       <td className={styles.td}>
         {file.isOrphaned && (
-          <span className={styles.statusOrphaned} title="Verwaiste DNG-Datei (keine JPG)">
-            verwaist
+          <span className={styles.statusOrphaned} title="Enthält nur DNG-Dateien; Löschen beim Umbenennen nur nach Bestätigung">
+            nur DNG
           </span>
         )}
         {!file.isValid && !file.isOrphaned && (

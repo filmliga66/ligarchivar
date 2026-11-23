@@ -31,7 +31,15 @@ export interface EventDetailDto {
 export interface RenameRequestDto {
   startNumber: number;
   fileOrder?: string[];
+  confirmationToken?: string;
 }
+
+export interface RenamePreviewDto {
+  filesToDelete: string[];
+  confirmationToken: string;
+}
+
+export type RenameResult = EventDetailDto | RenamePreviewDto;
 
 export interface LoginRequestDto {
   username: string;
