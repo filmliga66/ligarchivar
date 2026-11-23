@@ -86,6 +86,8 @@ Compose also rejects an unset or empty password before starting the container.
 
 ## Building from source
 
+See [Contributing](CONTRIBUTING.md) for local checks and PR review guidance.
+
 ### Prerequisites
 
 - [.NET 11 SDK](https://dotnet.microsoft.com/download)
