@@ -143,6 +143,28 @@ public class EventDirectoryTests
     }
 
     [Fact]
+    public void Rename_DateKeepsLegacyTimestampPriorityWhenExtensionsAreUppercase()
+    {
+        var (fs, eventDirectory) = CreateEvent(new Dictionary<string, string>
+        {
+            ["Film.JPG"] = "photo",
+            ["film.mp3"] = "audio",
+            ["FILM.dng"] = "raw",
+        });
+        fs.File.SetLastWriteTimeUtc($"{EventFolder}/film.mp3", TenUtc.AddHours(1));
+        eventDirectory.LoadChildren();
+
+        eventDirectory.ExecuteRename(eventDirectory.PlanRenameByDateTime());
+
+        Snapshot(fs).Should().BeEquivalentTo(new Dictionary<string, string>
+        {
+            ["2026-06-01_11-00-00.JPG"] = "photo",
+            ["2026-06-01_11-00-00.mp3"] = "audio",
+            ["2026-06-01_11-00-00.dng"] = "raw",
+        });
+    }
+
+    [Fact]
     public void Rename_IncomingJpegDoesNotChangeTheDngDeletionDecision()
     {
         var (fs, eventDirectory) = CreateEvent(new Dictionary<string, string>

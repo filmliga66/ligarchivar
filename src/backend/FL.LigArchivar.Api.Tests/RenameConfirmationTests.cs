@@ -62,7 +62,7 @@ public class RenameConfirmationTests
         confirmed.StatusCode.Should().Be(HttpStatusCode.OK);
         Snapshot(fs).Should().BeEquivalentTo(new Dictionary<string, string>
         {
-            [$"{newName}.JPG"] = "photo",
+            [$"{newName}.jpg"] = "photo",
             [$"{newName}.dng"] = "matching raw",
         });
     }
@@ -139,7 +139,7 @@ public class RenameConfirmationTests
         [$"{DirectoryPath}/Raw.DNG"] = new("original raw"),
         [$"{DirectoryPath}/raw_bearbeitet.dng"] = new("edited raw"),
         [$"{DirectoryPath}/film.dng"] = new("matching raw"),
-        [$"{DirectoryPath}/Film.JPG"] = new("photo") { LastWriteTime = new DateTime(2026, 6, 1, 10, 0, 0, DateTimeKind.Utc) },
+        [$"{DirectoryPath}/Film.jpg"] = new("photo") { LastWriteTime = new DateTime(2026, 6, 1, 10, 0, 0, DateTimeKind.Utc) },
         [$"/archive/{OtherEventPath}/Raw.DNG"] = new("other raw"),
     });
 

@@ -44,9 +44,10 @@ public class DataFiles
 
     internal string GetDateBaseName()
     {
-        var file = _files.FirstOrDefault(f => f.Extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase))
-            ?? _files.FirstOrDefault(f => f.Extension.Equals(".mp3", StringComparison.OrdinalIgnoreCase))
-            ?? _files.FirstOrDefault(f => f.Extension.Equals(".mts", StringComparison.OrdinalIgnoreCase))
+        // Preserve the legacy, case-sensitive timestamp priority independently of grouping.
+        var file = _files.FirstOrDefault(f => f.Extension == ".jpg")
+            ?? _files.FirstOrDefault(f => f.Extension == ".mp3")
+            ?? _files.FirstOrDefault(f => f.Extension == ".mts")
             ?? _files[0];
         return file.LastWriteTimeUtc.ToString("yyyy-MM-dd_HH-mm-ss", CultureInfo.InvariantCulture);
     }
