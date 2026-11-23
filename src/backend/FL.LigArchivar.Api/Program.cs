@@ -12,14 +12,6 @@ if (string.Equals(builder.Configuration["LOG_FORMAT"], "json", StringComparison.
     builder.Logging.AddJsonConsole();
 }
 
-// ── Required configuration ────────────────────────────────────────────────────
-
-if (string.IsNullOrWhiteSpace(builder.Configuration["AUTH_USERNAME"]))
-    throw new InvalidOperationException("AUTH_USERNAME is required and must not be empty.");
-
-if (string.IsNullOrWhiteSpace(builder.Configuration["AUTH_PASSWORD"]))
-    throw new InvalidOperationException("AUTH_PASSWORD is required and must not be empty.");
-
 // ── Services ─────────────────────────────────────────────────────────────────
 
 builder.Services.AddControllers();
@@ -59,6 +51,13 @@ builder.Services.AddSingleton<ArchiveService>();
 // ── Pipeline ──────────────────────────────────────────────────────────────────
 
 var app = builder.Build();
+
+// Validate the final configuration before serving requests.
+if (string.IsNullOrWhiteSpace(app.Configuration["AUTH_USERNAME"]))
+    throw new InvalidOperationException("AUTH_USERNAME is required and must not be empty.");
+
+if (string.IsNullOrWhiteSpace(app.Configuration["AUTH_PASSWORD"]))
+    throw new InvalidOperationException("AUTH_PASSWORD is required and must not be empty.");
 
 app.UseDefaultFiles();
 app.UseStaticFiles();

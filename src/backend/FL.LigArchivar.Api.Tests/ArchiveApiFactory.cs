@@ -18,12 +18,18 @@ namespace FL.LigArchivar.Api.Tests;
 public class ArchiveApiFactory : WebApplicationFactory<Program>
 {
     private readonly IFileSystem _fileSystem;
+    private readonly IDictionary<string, string?> _configuration;
 
     public ArchiveApiFactory() : this(CreateDefaultMockFileSystem()) { }
 
-    public ArchiveApiFactory(IFileSystem fileSystem)
+    public ArchiveApiFactory(IFileSystem fileSystem, IDictionary<string, string?>? configuration = null)
     {
         _fileSystem = fileSystem;
+        _configuration = configuration ?? new Dictionary<string, string?>
+        {
+            ["AUTH_USERNAME"] = "test-user",
+            ["AUTH_PASSWORD"] = "test-password",
+        };
     }
 
     protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
@@ -32,12 +38,8 @@ public class ArchiveApiFactory : WebApplicationFactory<Program>
         // regardless of any environment variables set on the host machine.
         builder.ConfigureAppConfiguration((_, config) =>
         {
-            config.AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["ARCHIVE_ROOT"] = "/archive",
-                ["AUTH_USERNAME"] = "admin",
-                ["AUTH_PASSWORD"] = "changeme",
-            });
+            config.AddInMemoryCollection(new Dictionary<string, string?> { ["ARCHIVE_ROOT"] = "/archive" });
+            config.AddInMemoryCollection(_configuration);
         });
 
         builder.ConfigureServices(services =>
@@ -54,8 +56,8 @@ public class ArchiveApiFactory : WebApplicationFactory<Program>
 
     /// <summary>Returns an HttpClient pre-authenticated with the default test credentials.</summary>
     public async Task<HttpClient> CreateAuthenticatedClientAsync(
-        string username = "admin",
-        string password = "changeme")
+        string username = "test-user",
+        string password = "test-password")
     {
         var client = CreateClient();
         var response = await client.PostAsJsonAsync("/api/auth/login", new { username, password });

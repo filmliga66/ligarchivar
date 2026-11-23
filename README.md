@@ -28,8 +28,8 @@ Runs as a single Docker container; the archive directory is mounted as a volume.
        volumes:
          - /path/to/your/archive:/archive:rw
        environment:
-         - AUTH_USERNAME=admin
-         - AUTH_PASSWORD=your-secure-password
+         - AUTH_USERNAME=${AUTH_USERNAME:-fl-admin}
+         - AUTH_PASSWORD=${AUTH_PASSWORD:?Set AUTH_PASSWORD to a non-empty password}
          - ARCHIVE_ROOT=/archive
          # Set these to the UID/GID of the user that owns the archive files
          # on the host so the container process can read and rename them.
@@ -41,7 +41,10 @@ Runs as a single Docker container; the archive directory is mounted as a volume.
    ```
 
 2. Replace `/path/to/your/archive` with the absolute path to your archive
-   directory on the host, and set `AUTH_PASSWORD` to a strong value.
+   directory on the host. Set `AUTH_PASSWORD` to a strong value in your shell
+   or a protected Compose `.env` file before starting Compose. Optionally set
+   `AUTH_USERNAME`; otherwise the login username is `fl-admin`. Keep your
+   password out of version control.
 
 3. Start the container:
 
@@ -51,13 +54,22 @@ Runs as a single Docker container; the archive directory is mounted as a volume.
 
 4. Open `http://<server>:8080` in a browser and log in.
 
+### Upgrading an existing installation
+
+There is no longer a bundled password. If you relied on the previous default
+(`changeme`), configure `AUTH_PASSWORD` before upgrading or restarting; choose
+a new strong password. The default username has changed from `admin` to
+`fl-admin`. Set `AUTH_USERNAME=admin` explicitly if you need to keep the old
+username. Existing authentication cookies are not automatically revoked by a
+credential change.
+
 ---
 
 ## Environment variables
 
 | Variable        | Default    | Description                                             |
 | --------------- | ---------- | ------------------------------------------------------- |
-| `AUTH_USERNAME` | *required* | Login username                                          |
+| `AUTH_USERNAME` | `fl-admin` | Login username                                          |
 | `AUTH_PASSWORD` | *required* | Login password                                          |
 | `ARCHIVE_ROOT`  | `/archive` | Absolute path inside the container to the archive root  |
 | `PUID`          | (unset)    | UID of the user that owns the archive files on the host |
@@ -66,6 +78,9 @@ Runs as a single Docker container; the archive directory is mounted as a volume.
 Setting `PUID`/`PGID` causes the container process to run as that user via
 [gosu](https://github.com/tianon/gosu), following the same pattern as
 [LinuxServer.io](https://docs.linuxserver.io/general/understanding-puid-and-pgid/) images.
+
+The API refuses to start if `AUTH_PASSWORD` is missing, empty, or whitespace.
+Compose also rejects an unset or empty password before starting the container.
 
 ---
 
@@ -84,6 +99,11 @@ dotnet build
 dotnet test
 ```
 
+To run the API locally, set `AUTH_PASSWORD` in your environment (or via .NET
+user secrets) before starting it. The default username is `fl-admin`. For the
+Bruno collection, set the local environment's `password` to the configured API
+password and adjust `username` if you use a custom one; do not commit secrets.
+
 ### Frontend (dev server with hot reload)
 
 ```sh
@@ -92,7 +112,7 @@ npm install
 npm run dev
 ```
 
-The Vite dev server proxies `/api` and `/health` to `http://localhost:5000`
+The Vite dev server proxies `/api` and `/health` to `http://localhost:5118`
 (the default ASP.NET dev port), so both can run side-by-side without CORS issues.
 
 ### Build Docker image
@@ -146,7 +166,7 @@ FL.LigArchivar/
   ASP.NET backend via `UseStaticFiles` + `MapFallbackToFile("index.html")`.
 - **No database**: the archive directory on the volume is the source of truth.
   The tree is loaded from disk on every request (fast for local/NFS mounts).
-- **Authentication**: `HttpOnly` + `SameSite=Strict` session cookie.
+- **Authentication**: persistent `HttpOnly` + `SameSite=Strict` authentication cookie.
   Deploy behind a TLS-terminating reverse proxy (Caddy, nginx, Traefik) in production.
 - **Write locking**: `SemaphoreSlim(1,1)` in `ArchiveService` serializes rename
   operations. Concurrent requests get `409 Conflict` immediately.
