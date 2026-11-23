@@ -125,7 +125,7 @@ FL.LigArchivar/
 
 | Layer                       | Technology                       | Version       |
 | --------------------------- | -------------------------------- | ------------- |
-| **Backend language**        | C#                               | 13            |
+| **Backend language**        | C#                               | 15            |
 | **Backend framework**       | ASP.NET Core Web API             | .NET 11       |
 | **Frontend library**        | React                            | 19            |
 | **Frontend language**       | TypeScript                       | 6             |
