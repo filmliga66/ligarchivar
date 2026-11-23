@@ -35,7 +35,7 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
-      - "backend"
+      - ".NET"
     commit-message:
       prefix: "deps(backend)"
     groups:
