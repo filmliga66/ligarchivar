@@ -7,14 +7,14 @@ COPY src/frontend/ ./
 RUN npm run build
 
 # ── Stage 2: Build backend ────────────────────────────────────────────────────
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS backend-build
+FROM mcr.microsoft.com/dotnet/sdk:11.0 AS backend-build
 WORKDIR /app
 COPY src/backend/ ./
 RUN dotnet publish FL.LigArchivar.Api/FL.LigArchivar.Api.csproj \
     -c Release -o /app/publish
 
 # ── Stage 3: Runtime ─────────────────────────────────────────────────────────
-FROM mcr.microsoft.com/dotnet/aspnet:10.0
+FROM mcr.microsoft.com/dotnet/aspnet:11.0
 WORKDIR /app
 
 # Install curl for the health check and gosu for user switching
